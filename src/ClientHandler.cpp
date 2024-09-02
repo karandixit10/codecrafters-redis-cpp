@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <vector>
 #include <netdb.h>
+#include <algorithm>
 
 #define BUFFER_SIZE 1024
 
