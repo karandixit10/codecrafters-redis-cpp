@@ -56,7 +56,10 @@ void TcpServer::acceptConnections()
         }
         std::cout << "Client connected\n";
 
-        std::thread client_thread(handle_client, client_fd);
+        // Create a ClientHandler object and start handling the client in a new thread
+        std::thread client_thread([client_fd]() {
+            ClientHandler handler(client_fd);
+            handler.handle(); });
         client_thread.detach();
     }
 }

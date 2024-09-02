@@ -1,15 +1,20 @@
+// ClientHandler.cpp
 #include "ClientHandler.hpp"
 #include "RedisParser.hpp"
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
-#include <vector>
-#include <netdb.h>
 #include <algorithm>
+#include <netdb.h>
 
 #define BUFFER_SIZE 1024
 
-void handle_client(int client_fd)
+// Initialize the static member variable
+std::unordered_map<std::string, std::string> ClientHandler::key_value_store_;
+
+ClientHandler::ClientHandler(int client_fd) : client_fd_(client_fd) {}
+
+void ClientHandler::handle()
 {
     char buff[BUFFER_SIZE] = "";
 
@@ -19,7 +24,7 @@ void handle_client(int client_fd)
         memset(buff, '\0', sizeof(buff));
 
         // Receive data from client
-        ssize_t recv_bytes = recv(client_fd, buff, sizeof(buff) - 1, 0);
+        ssize_t recv_bytes = recv(client_fd_, buff, sizeof(buff) - 1, 0);
         if (recv_bytes <= 0)
         {
             std::cerr << "Client disconnected\n";
@@ -32,39 +37,82 @@ void handle_client(int client_fd)
 
         if (argStr.empty())
         {
-            send(client_fd, "-ERR empty command\r\n", 21, 0);
+            send(client_fd_, "-ERR empty command\r\n", 21, 0);
             continue;
         }
 
-        // Convert command to uppercase
-        std::string command = argStr[0];
-        std::transform(command.begin(), command.end(), command.begin(), ::toupper);
+        // Process the command
+        processCommand(argStr);
+    }
 
-        std::string reply;
+    close(client_fd_);
+}
 
-        if (command == "PING")
+void ClientHandler::processCommand(const std::vector<std::string>& argStr)
+{
+    if (argStr.empty())
+    {
+        send(client_fd_, "-ERR empty command\r\n", 21, 0);
+        return;
+    }
+
+    // Convert command to uppercase
+    std::string command = argStr[0];
+    std::transform(command.begin(), command.end(), command.begin(), ::toupper);
+
+    std::string reply;
+
+    if (command == "PING")
+    {
+        reply = "+PONG\r\n";
+    }
+    else if (command == "ECHO")
+    {
+        if (argStr.size() > 1)
         {
-            reply = "+PONG\r\n";
+            reply = "$" + std::to_string(argStr[1].length()) + "\r\n" + argStr[1] + "\r\n";
         }
-        else if (command == "ECHO")
+        else
         {
-            if (argStr.size() > 1)
+            reply = "-ERR wrong number of arguments for 'echo' command\r\n";
+        }
+    }
+    else if (command == "SET")
+    {
+        if (argStr.size() == 3)
+        {
+            key_value_store_[argStr[1]] = argStr[2];
+            reply = "+OK\r\n";
+        }
+        else
+        {
+            reply = "-ERR wrong number of arguments for 'set' command\r\n";
+        }
+    }
+    else if (command == "GET")
+    {
+        if (argStr.size() == 2)
+        {
+            auto it = key_value_store_.find(argStr[1]);
+            if (it != key_value_store_.end())
             {
-                reply = "$" + std::to_string(argStr[1].length()) + "\r\n" + argStr[1] + "\r\n";
+                reply = "$" + std::to_string(it->second.length()) + "\r\n" + it->second + "\r\n";
             }
             else
             {
-                reply = "-ERR wrong number of arguments for 'echo' command\r\n";
+                reply = "$-1\r\n"; // Null bulk string for non-existent keys
             }
         }
         else
         {
-            reply = "-ERR unknown command '" + command + "'\r\n";
+            reply = "-ERR wrong number of arguments for 'get' command\r\n";
         }
-
-        // Send the reply to the client
-        send(client_fd, reply.c_str(), reply.size(), 0);
+    }
+    else
+    {
+        reply = "-ERR unknown command '" + command + "'\r\n";
     }
 
-    close(client_fd);
+    // Send the reply to the client
+    send(client_fd_, reply.c_str(), reply.size(), 0);
 }

@@ -7,8 +7,8 @@
 class RedisParser
 {
 public:
-    RedisParser(const std::string& input);
-    std::vector<std::string> parseCommand();
+                                RedisParser     (const std::string& input);
+    std::vector<std::string>    parseCommand    ();
 
 private:
     std::string input;
