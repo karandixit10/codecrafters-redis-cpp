@@ -1,23 +1,25 @@
-// ClientHandler.hpp
-#ifndef CLIENTHANDLER_HPP
-#define CLIENTHANDLER_HPP
+#ifndef CLIENT_HANDLER_HPP
+#define CLIENT_HANDLER_HPP
 
-#include <unordered_map>
 #include <string>
-#include <vector>
+#include <map>
+#include "RedisParser.hpp"
 
 class ClientHandler {
 public:
-   
-            ClientHandler   (int client_fd);                                // Constructor that accepts a client socket file descriptor
-
-   
-    void    handle          ();                                             // Method to handle client communication
+    ClientHandler();
+    void handleClient(int clientSocket);
 
 private:
-    void    processCommand (const std::vector<std::string>& argStr);        // Method to process commands from the client
-    int     client_fd_;                                                     // Socket file descriptor for the client connection
-    static  std::unordered_map<std::string, std::string> key_value_store_;  // Key-value store to manage data
+    std::map<std::string, std::string> keyValues;
+    std::map<std::string, long> expTime;
+    RedisParser parser;
+
+    void handleSet(const std::vector<std::string>& command, int clientSocket);
+    void handleGet(const std::vector<std::string>& command, int clientSocket);
+    void handleEcho(const std::vector<std::string>& command, int clientSocket);
+    void handlePing(int clientSocket);
+    void sendResponse(int clientSocket, const std::string& response);
 };
 
-#endif // CLIENTHANDLER_HPP
+#endif // CLIENT_HANDLER_HPP

@@ -1,17 +1,12 @@
-#ifndef REDISPARSER_HPP
-#define REDISPARSER_HPP
+#ifndef REDIS_PARSER_HPP
+#define REDIS_PARSER_HPP
 
-#include <string>
 #include <vector>
+#include <string>
 
-class RedisParser
-{
+class RedisParser {
 public:
-                                RedisParser     (const std::string& input);
-    std::vector<std::string>    parseCommand    ();
-
-private:
-    std::string input;
+    std::vector<std::string> parseCommand(const std::string& command);
 };
 
-#endif // REDISPARSER_HPP
+#endif // REDIS_PARSER_HPP

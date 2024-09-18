@@ -1,16 +1,13 @@
+#include "TcpServer.hpp"
 #include <iostream>
-#include "TcpServer.hpp"  // Include the TcpServer header
 
-int main(int argc, char **argv)
-{
-    std::cout << std::unitbuf;
-    std::cerr << std::unitbuf;
-
-    std::cout << "Logs from your program will appear here!\n";
-
-    int port = 6379;  // Default Redis port
-    TcpServer server(port);
-    server.start();
-
+int main() {
+    try {
+        TcpServer server(6379);  // Redis default port
+        server.start();
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
     return 0;
 }

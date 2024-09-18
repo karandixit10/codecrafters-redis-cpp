@@ -1,25 +1,16 @@
-// TcpServer.hpp
-#ifndef TCPSERVER_HPP
-#define TCPSERVER_HPP
-
-#include <netinet/in.h>
-#include <thread>
-#include <iostream>
-#include "ClientHandler.hpp"
+#ifndef TCP_SERVER_HPP
+#define TCP_SERVER_HPP
 
 class TcpServer {
 public:
-            TcpServer   (int port);
-    void    start       ();                          // Method to start the server
+    TcpServer(int port);
+    void start();
 
 private:
-    
-    void acceptConnections  ();                      // Method to accept client connections
+    int serverSocket;
+    int port;
 
-    int                     port;                    // Port number for the server
-    int                     server_fd;               // File descriptor for the server socket
-    struct sockaddr_in      server_addr;             // Server address structure
-    void handleClient       (int client_fd);         // Method to handle a client connection
+    void setupServerSocket();
 };
 
-#endif // TCPSERVER_HPP
+#endif // TCP_SERVER_HPP

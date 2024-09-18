@@ -1,38 +1,31 @@
 #include "RedisParser.hpp"
-#include <sstream>
-#include <stdexcept>
 
-RedisParser::RedisParser(const std::string& input)
-    : input(input) {}
-
-std::vector<std::string> RedisParser::parseCommand()
-{
+std::vector<std::string> RedisParser::parseCommand(const std::string& command) {
     std::vector<std::string> result;
-    std::istringstream iss(input);
-    std::string line;
+    size_t i = 0;
+    int arrLen = 0;
 
-    // Handle RESP (REdis Serialization Protocol)
-    while (std::getline(iss, line))
-    {
-        if (line.empty() || line[0] == '\r' || line[0] == '\n')
-        {
-            continue;
+    if (command[0] == '*') {
+        i = 1;
+        while (command[i] != '\r' && command[i+1] != '\n') {
+            arrLen = arrLen * 10 + (command[i] - '0');
+            i++;
         }
+        i += 2;  // Skip \r\n
 
-        if (line[0] == '*') // Array of Bulk Strings
-        {
-            continue; // We just care about the actual command parts
-        }
-        else if (line[0] == '$') // Bulk String
-        {
-            std::string argument;
-            std::getline(iss, argument);
-            argument.erase(argument.find_last_not_of("\r\n") + 1); // Remove trailing CRLF
-            result.push_back(argument);
-        }
-        else // Simple Strings (e.g., inline commands)
-        {
-            result.push_back(line);
+        while (arrLen > 0) {
+            if (command[i] == '$') {
+                i++;  // Skip $
+                int len = 0;
+                while (command[i] != '\r') {
+                    len = len * 10 + (command[i] - '0');
+                    i++;
+                }
+                i += 2;  // Skip \r\n
+                result.push_back(command.substr(i, len));
+                i += len + 2;  // Skip content and \r\n
+                arrLen--;
+            }
         }
     }
 

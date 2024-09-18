@@ -1,118 +1,89 @@
-// ClientHandler.cpp
 #include "ClientHandler.hpp"
-#include "RedisParser.hpp"
-#include <iostream>
-#include <cstring>
+#include <sys/socket.h>
 #include <unistd.h>
-#include <algorithm>
-#include <netdb.h>
+#include <iostream>
+#include <chrono>
 
-#define BUFFER_SIZE 1024
+ClientHandler::ClientHandler() : parser() {}
 
-// Initialize the static member variable
-std::unordered_map<std::string, std::string> ClientHandler::key_value_store_;
+void ClientHandler::handleClient(int clientSocket) {
+    char recvBuffer[1024];
+    long n;
+    while ((n = recv(clientSocket, recvBuffer, sizeof(recvBuffer) - 1, 0)) > 0) {
+        recvBuffer[n] = '\0';
+        std::vector<std::string> command = parser.parseCommand(recvBuffer);
+        
+        if (command.empty()) continue;
 
-ClientHandler::ClientHandler(int client_fd) : client_fd_(client_fd) {}
-
-void ClientHandler::handle()
-{
-    char buff[BUFFER_SIZE] = "";
-
-    while (true)
-    {
-        // Clear the buffer
-        memset(buff, '\0', sizeof(buff));
-
-        // Receive data from client
-        ssize_t recv_bytes = recv(client_fd_, buff, sizeof(buff) - 1, 0);
-        if (recv_bytes <= 0)
-        {
-            std::cerr << "Client disconnected\n";
-            break;
+        if (command[0] == "SET") {
+            handleSet(command, clientSocket);
+        } else if (command[0] == "GET") {
+            handleGet(command, clientSocket);
+        } else if (command[0] == "ECHO") {
+            handleEcho(command, clientSocket);
+        } else if (command[0] == "PING") {
+            handlePing(clientSocket);
+        } else {
+            sendResponse(clientSocket, "-ERR unknown command\r\n");
         }
-
-        std::string recv_str(buff, recv_bytes);
-        RedisParser parser(recv_str);
-        std::vector<std::string> argStr = parser.parseCommand();
-
-        if (argStr.empty())
-        {
-            send(client_fd_, "-ERR empty command\r\n", 21, 0);
-            continue;
-        }
-
-        // Process the command
-        processCommand(argStr);
     }
-
-    close(client_fd_);
+    close(clientSocket);
 }
 
-void ClientHandler::processCommand(const std::vector<std::string>& argStr)
-{
-    if (argStr.empty())
-    {
-        send(client_fd_, "-ERR empty command\r\n", 21, 0);
+void ClientHandler::handleSet(const std::vector<std::string>& command, int clientSocket) {
+    if (command.size() < 3) {
+        sendResponse(clientSocket, "-ERR wrong number of arguments for 'set' command\r\n");
         return;
     }
 
-    // Convert command to uppercase
-    std::string command = argStr[0];
-    std::transform(command.begin(), command.end(), command.begin(), ::toupper);
+    keyValues[command[1]] = command[2];
+    if (command.size() > 3 && command[3] == "px") {
+        auto now = std::chrono::system_clock::now();
+        auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+        auto value = now_ms.time_since_epoch();
+        long current_time_ms = value.count();
+        expTime[command[1]] = current_time_ms + std::stol(command[4]);
+    } else {
+        expTime[command[1]] = -1;
+    }
+    sendResponse(clientSocket, "+OK\r\n");
+}
 
-    std::string reply;
-
-    if (command == "PING")
-    {
-        reply = "+PONG\r\n";
-    }
-    else if (command == "ECHO")
-    {
-        if (argStr.size() > 1)
-        {
-            reply = "$" + std::to_string(argStr[1].length()) + "\r\n" + argStr[1] + "\r\n";
-        }
-        else
-        {
-            reply = "-ERR wrong number of arguments for 'echo' command\r\n";
-        }
-    }
-    else if (command == "SET")
-    {
-        if (argStr.size() == 3)
-        {
-            key_value_store_[argStr[1]] = argStr[2];
-            reply = "+OK\r\n";
-        }
-        else
-        {
-            reply = "-ERR wrong number of arguments for 'set' command\r\n";
-        }
-    }
-    else if (command == "GET")
-    {
-        if (argStr.size() == 2)
-        {
-            auto it = key_value_store_.find(argStr[1]);
-            if (it != key_value_store_.end())
-            {
-                reply = "$" + std::to_string(it->second.length()) + "\r\n" + it->second + "\r\n";
-            }
-            else
-            {
-                reply = "$-1\r\n"; // Null bulk string for non-existent keys
-            }
-        }
-        else
-        {
-            reply = "-ERR wrong number of arguments for 'get' command\r\n";
-        }
-    }
-    else
-    {
-        reply = "-ERR unknown command '" + command + "'\r\n";
+void ClientHandler::handleGet(const std::vector<std::string>& command, int clientSocket) {
+    if (command.size() != 2) {
+        sendResponse(clientSocket, "-ERR wrong number of arguments for 'get' command\r\n");
+        return;
     }
 
-    // Send the reply to the client
-    send(client_fd_, reply.c_str(), reply.size(), 0);
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+    auto value = now_ms.time_since_epoch();
+    long current_time_ms = value.count();
+
+    if (keyValues.find(command[1]) != keyValues.end() && 
+        (expTime[command[1]] == -1 || expTime[command[1]] > current_time_ms)) {
+        std::string response = "$" + std::to_string(keyValues[command[1]].length()) + "\r\n" +
+                               keyValues[command[1]] + "\r\n";
+        sendResponse(clientSocket, response);
+    } else {
+        sendResponse(clientSocket, "$-1\r\n");
+    }
+}
+
+void ClientHandler::handleEcho(const std::vector<std::string>& command, int clientSocket) {
+    if (command.size() < 2) {
+        sendResponse(clientSocket, "-ERR wrong number of arguments for 'echo' command\r\n");
+        return;
+    }
+
+    std::string response = "$" + std::to_string(command[1].length()) + "\r\n" + command[1] + "\r\n";
+    sendResponse(clientSocket, response);
+}
+
+void ClientHandler::handlePing(int clientSocket) {
+    sendResponse(clientSocket, "+PONG\r\n");
+}
+
+void ClientHandler::sendResponse(int clientSocket, const std::string& response) {
+    send(clientSocket, response.c_str(), response.length(), 0);
 }
