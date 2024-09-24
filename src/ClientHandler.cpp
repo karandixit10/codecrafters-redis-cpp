@@ -1,14 +1,24 @@
 #include "ClientHandler.hpp"
+#include "Logger.hpp"
+#include "RDBDecoder.hpp"
+#include <chrono>
+#include <algorithm>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <iostream>
 #include <chrono>
 #include <mutex>
 #include <algorithm>
+#include <fstream>
+#include <arpa/inet.h>
+
+DB_Config ClientHandler::config;
+std::mutex ClientHandler::configMutex;
 
 ClientHandler::ClientHandler() : parser() {}
 
 void ClientHandler::handleClient(int clientSocket) {
+    Logger::log("Handling client connection");
     char recvBuffer[1024];
     long n;
     while ((n = recv(clientSocket, recvBuffer, sizeof(recvBuffer) - 1, 0)) > 0) {
@@ -30,50 +40,55 @@ void ClientHandler::handleClient(int clientSocket) {
             handlePing(clientSocket);
         } else if (command[0] == "CONFIG") {
             handleConfig(command, clientSocket);
+        } else if (command[0] == "KEYS") {
+            handleKeys(command, clientSocket);
         } else {
             sendResponse(clientSocket, "-ERR unknown command\r\n");
         }
     }
     close(clientSocket);
+    Logger::log("Client disconnected");
 }
 
 void ClientHandler::handleSet(const std::vector<std::string>& command, int clientSocket) {
-    std::lock_guard<std::mutex> lock(mapMutex);
+    std::lock_guard<std::mutex> lock(configMutex);
     if (command.size() < 3) {
         sendResponse(clientSocket, "-ERR wrong number of arguments for 'set' command\r\n");
         return;
     }
 
-    keyValues[command[1]] = command[2];
+    Logger::log("SET command: key=" + command[1] + ", value=" + command[2]);
+    DB_Entry entry;
+    entry.value = command[2];
+    entry.date = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
+
     if (command.size() > 3 && command[3] == "px") {
-        auto now = std::chrono::system_clock::now();
-        auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-        auto value = now_ms.time_since_epoch();
-        long current_time_ms = value.count();
-        expTime[command[1]] = current_time_ms + std::stol(command[4]);
+        entry.expiry = entry.date + std::stoul(command[4]);
     } else {
-        expTime[command[1]] = -1;
+        entry.expiry = 0; // No expiry
     }
+
+    config.db[command[1]] = entry;
     sendResponse(clientSocket, "+OK\r\n");
 }
 
 void ClientHandler::handleGet(const std::vector<std::string>& command, int clientSocket) {
-    std::lock_guard<std::mutex> lock(mapMutex);
-    auto now = std::chrono::system_clock::now();
-    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-    auto value = now_ms.time_since_epoch();
-    long current_time_ms = value.count();
-
-    if (keyValues.find(command[1]) != keyValues.end()) {
-        long exp_time = expTime[command[1]];
-        if (exp_time == -1 || exp_time > current_time_ms) {
-            std::string response = "$" + std::to_string(keyValues[command[1]].length()) + "\r\n" +
-                                   keyValues[command[1]] + "\r\n";
+    std::lock_guard<std::mutex> lock(configMutex);
+    Logger::log("GET command: key=" + command[1]);
+    auto it = config.db.find(command[1]);
+    if (it != config.db.end()) {
+        uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+        if (it->second.expiry == 0 || it->second.expiry > now) {
+            std::string response = "$" + std::to_string(it->second.value.length()) + "\r\n" +
+                                   it->second.value + "\r\n";
             sendResponse(clientSocket, response);
         } else {
+            config.db.erase(it);
             sendResponse(clientSocket, "$-1\r\n");
-            keyValues.erase(command[1]);
-            expTime.erase(command[1]);
         }
     } else {
         sendResponse(clientSocket, "$-1\r\n");
@@ -86,16 +101,14 @@ void ClientHandler::handleEcho(const std::vector<std::string>& command, int clie
         return;
     }
 
+    Logger::log("ECHO command: " + command[1]);
     std::string response = "$" + std::to_string(command[1].length()) + "\r\n" + command[1] + "\r\n";
     sendResponse(clientSocket, response);
 }
 
 void ClientHandler::handlePing(int clientSocket) {
+    Logger::log("PING command");
     sendResponse(clientSocket, "+PONG\r\n");
-}
-
-void ClientHandler::sendResponse(int clientSocket, const std::string& response) {
-    send(clientSocket, response.c_str(), response.length(), 0);
 }
 
 void ClientHandler::handleConfig(const std::vector<std::string>& command, int clientSocket) {
@@ -104,6 +117,7 @@ void ClientHandler::handleConfig(const std::vector<std::string>& command, int cl
         return;
     }
 
+    Logger::log("CONFIG command: " + command[1] + " " + command[2]);
     if (command[1] == "GET") {
         handleConfigGet(command[2], clientSocket);
     } else {
@@ -114,9 +128,9 @@ void ClientHandler::handleConfig(const std::vector<std::string>& command, int cl
 void ClientHandler::handleConfigGet(const std::string& parameter, int clientSocket) {
     std::string value;
     if (parameter == "dir") {
-        value = dir;
+        value = config.dir;
     } else if (parameter == "dbfilename") {
-        value = dbfilename;
+        value = config.db_filename;
     } else {
         sendResponse(clientSocket, "-ERR unknown config parameter\r\n");
         return;
@@ -127,14 +141,30 @@ void ClientHandler::handleConfigGet(const std::string& parameter, int clientSock
     sendResponse(clientSocket, response);
 }
 
-void ClientHandler::setInitialConfig(const std::string& initialDir, const std::string& initialDbfilename) {
-    dir = initialDir;
-    dbfilename = initialDbfilename;
+void ClientHandler::handleKeys(const std::vector<std::string>& command, int clientSocket) {
+    std::lock_guard<std::mutex> lock(configMutex);
+    Logger::log("KEYS command");
+    
+    std::string response = "*" + std::to_string(config.db.size()) + "\r\n";
+    for (const auto& pair : config.db) {
+        response += "$" + std::to_string(pair.first.length()) + "\r\n" + pair.first + "\r\n";
+    }
+    sendResponse(clientSocket, response);
 }
 
-std::map<std::string, std::string> ClientHandler::keyValues;
-std::map<std::string, long> ClientHandler::expTime;
-std::mutex ClientHandler::mapMutex;
-// Initialize static members without default values
-std::string ClientHandler::dir = "/tmp/redis-data";
-std::string ClientHandler::dbfilename = "dump.rdb";
+void ClientHandler::setInitialConfig(const std::string& initialDir, const std::string& initialDbfilename) {
+    std::lock_guard<std::mutex> lock(configMutex);
+    config.dir = initialDir;
+    config.db_filename = initialDbfilename;
+}
+
+void ClientHandler::loadRdbFile() {
+    std::lock_guard<std::mutex> lock(configMutex);
+    RDBDecoder decoder(config);
+    decoder.read_rdb();
+    Logger::log("Loaded " + std::to_string(config.db.size()) + " keys from RDB file");
+}
+
+void ClientHandler::sendResponse(int clientSocket, const std::string& response) {
+    send(clientSocket, response.c_str(), response.length(), 0);
+}

@@ -1,0 +1,71 @@
+2024-09-25 00:49:50 [INFO] Server started on port 6379
+2024-09-25 00:49:50 [INFO] Server listening on port 6379
+2024-09-25 00:50:27 [INFO] Server started on port 6379
+2024-09-25 00:50:27 [INFO] Server listening on port 6379
+2024-09-25 00:50:39 [INFO] Server started on port 6379
+2024-09-25 00:50:39 [ERROR] Failed to bind to port 6379
+2024-09-25 00:50:39 [ERROR] Server error: Failed to bind to port 6379
+2024-09-25 00:51:09 [INFO] Server started on port 6379
+2024-09-25 00:51:09 [ERROR] Failed to bind to port 6379
+2024-09-25 00:51:09 [ERROR] Server error: Failed to bind to port 6379
+2024-09-25 00:51:18 [INFO] Server started on port 6379
+2024-09-25 00:51:18 [ERROR] Failed to bind to port 6379
+2024-09-25 00:51:18 [ERROR] Server error: Failed to bind to port 6379
+2024-09-25 00:51:56 [INFO] Server started on port 6379
+2024-09-25 00:51:56 [INFO] Server listening on port 6379
+2024-09-25 00:52:01 [INFO] Server started on port 6379
+2024-09-25 00:52:01 [INFO] Server listening on port 6379
+2024-09-25 00:52:14 [INFO] Handling client connection
+2024-09-25 00:52:14 [CONNECTION] 127.0.0.1:49335 - Connected
+2024-09-25 00:52:29 [INFO] KEYS command
+2024-09-25 00:52:37 [INFO] GET command: key=config
+2024-09-25 00:52:46 [INFO] SET command: key=foo, value=bar
+2024-09-25 00:52:50 [INFO] GET command: key=foo
+2024-09-25 00:53:33 [INFO] KEYS command
+2024-09-25 00:53:43 [INFO] KEYS command
+2024-09-25 00:55:27 [INFO] Server started on port 6379
+2024-09-25 00:55:27 [INFO] Server listening on port 6379
+2024-09-25 00:56:06 [INFO] Server started on port 6379
+2024-09-25 00:56:06 [INFO] Server listening on port 6379
+2024-09-25 00:56:11 [CONNECTION] 127.0.0.1:49561 - Connected
+2024-09-25 00:56:11 [INFO] Handling client connection
+2024-09-25 00:56:19 [INFO] SET command: key=foo, value=bar
+2024-09-25 00:56:23 [INFO] SET command: key=baz, value=qux
+2024-09-25 00:56:25 [INFO] KEYS command
+2024-09-25 00:56:30 [INFO] KEYS command
+2024-09-25 00:56:32 [INFO] KEYS command
+2024-09-25 00:56:32 [INFO] KEYS command
+2024-09-25 01:20:14 [INFO] Server started on port 6379
+2024-09-25 01:20:14 [INFO] Server listening on port 6379
+2024-09-25 01:20:14 [ERROR] Failed to open RDB file: /tmp/redis-files/dump.rdb
+2024-09-25 01:20:16 [INFO] Handling client connection
+2024-09-25 01:20:16 [CONNECTION] 127.0.0.1:50846 - Connected
+2024-09-25 01:20:17 [INFO] KEYS command
+2024-09-25 01:20:20 [INFO] SET command: key=foo, value=bar
+2024-09-25 01:20:22 [INFO] SET command: key=baz, value=qux
+2024-09-25 01:20:23 [INFO] KEYS command
+2024-09-25 01:20:25 [INFO] KEYS command
+2024-09-25 01:20:25 [INFO] KEYS command
+2024-09-25 03:32:30 [INFO] Server started on port 6379
+2024-09-25 03:32:30 [INFO] Server listening on port 6379
+2024-09-25 03:32:30 [INFO] Loaded 0 keys from RDB file
+2024-09-25 03:32:43 [INFO] Handling client connection
+2024-09-25 03:32:43 [CONNECTION] 127.0.0.1:56043 - Connected
+2024-09-25 03:35:46 [INFO] Client disconnected
+2024-09-25 03:35:54 [INFO] Server started on port 6379
+2024-09-25 03:35:54 [INFO] Server listening on port 6379
+2024-09-25 03:35:54 [INFO] Loaded 0 keys from RDB file
+2024-09-25 03:35:58 [CONNECTION] 127.0.0.1:56401 - Connected
+2024-09-25 03:35:58 [INFO] Handling client connection
+2024-09-25 03:36:02 [INFO] GET command: key=key
+2024-09-25 03:36:05 [INFO] SET command: key=foo, value=bar
+2024-09-25 03:36:09 [INFO] GET command: key=foo
+2024-09-25 03:36:18 [INFO] PING command
+2024-09-25 03:36:21 [INFO] ECHO command: hey
+2024-09-25 03:36:33 [INFO] CONFIG command: get dbname
+2024-09-25 03:36:40 [INFO] CONFIG command: get dbname
+2024-09-25 03:36:47 [INFO] CONFIG command: get db_filename
+2024-09-25 03:36:52 [INFO] CONFIG command: get db_filename
+2024-09-25 03:37:03 [INFO] CONFIG command: GET dir
+2024-09-25 03:37:10 [INFO] KEYS command
+2024-09-25 03:37:12 [INFO] Client disconnected

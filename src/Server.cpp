@@ -1,5 +1,6 @@
 #include "TcpServer.hpp"
 #include "ClientHandler.hpp"
+#include "Logger.hpp"
 #include <iostream>
 #include <string>
 
@@ -21,10 +22,15 @@ int main(int argc, char* argv[]) {
     // Set the initial configuration
     ClientHandler::setInitialConfig(dir, dbfilename);
 
+    // Initialize the logger
+    Logger::init("server.log");
+
     try {
         TcpServer server(6379);  // Redis default port
+        Logger::log("Server started on port 6379");
         server.start();
     } catch (const std::exception& e) {
+        Logger::error("Server error: " + std::string(e.what()));
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
