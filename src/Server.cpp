@@ -8,6 +8,11 @@ int main(int argc, char* argv[]) {
     std::string dir;
     std::string dbfilename;
 
+    int port = 6379;  // default port
+    if (argc > 2 && std::string(argv[1]) == "--port") {
+        port = std::stoi(argv[2]);
+    }
+
     // Parse command-line arguments
     for (int i = 1; i < argc; i += 2) {
         if (i + 1 < argc) {
@@ -26,8 +31,8 @@ int main(int argc, char* argv[]) {
     Logger::init("server.log");
 
     try {
-        TcpServer server(6379);  // Redis default port
-        Logger::log("Server started on port 6379");
+        TcpServer server(port);
+        Logger::log("Server started on port " + std::to_string(port));
         server.start();
     } catch (const std::exception& e) {
         Logger::error("Server error: " + std::string(e.what()));
