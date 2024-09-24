@@ -69,3 +69,15 @@
 2024-09-25 03:37:03 [INFO] CONFIG command: GET dir
 2024-09-25 03:37:10 [INFO] KEYS command
 2024-09-25 03:37:12 [INFO] Client disconnected
+2024-09-25 03:44:52 [INFO] Server started on port 6379
+2024-09-25 03:44:52 [INFO] Server listening on port 6379
+2024-09-25 03:44:52 [INFO] Loaded 0 keys from RDB file
+2024-09-25 03:44:58 [CONNECTION] 127.0.0.1:57025 - Connected
+2024-09-25 03:44:58 [INFO] Handling client connection
+2024-09-25 03:45:13 [INFO] GET command: key=foo
+2024-09-25 03:45:19 [INFO] SET command: key=foo, value=bar
+2024-09-25 03:45:22 [INFO] GET command: key=foo
+2024-09-25 03:45:29 [INFO] SET command: key=foo, value=bar
+2024-09-25 03:45:33 [INFO] SET command: key=baz, value=kpp
+2024-09-25 03:45:38 [INFO] GET command: key=baz
+2024-09-25 03:45:44 [INFO] Client disconnected
