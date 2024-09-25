@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 // Redis request parser
 struct Request {

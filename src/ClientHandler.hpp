@@ -14,20 +14,10 @@ public:
     static void loadRdbFile();
 
 private:
-    // Commands
-    void handleSet(const std::vector<std::string>& command, int clientSocket);
-    void handleGet(const std::vector<std::string>& command, int clientSocket);
-    void handleEcho(const std::vector<std::string>& command, int clientSocket);
-    void handlePing(int clientSocket);
-    void handleConfig(const std::vector<std::string>& command, int clientSocket);
-    void handleConfigGet(const std::string& parameter, int clientSocket);
-    void handleKeys(const std::vector<std::string>& command, int clientSocket);
-
-    // Utils
-    void sendResponse(int clientSocket, const std::string& response);
     RedisParser parser;
     static DB_Config config;
     static std::mutex configMutex;
+    void sendResponse(int clientSocket, const std::string& response);
 };
 
 #endif // CLIENT_HANDLER_HPP
