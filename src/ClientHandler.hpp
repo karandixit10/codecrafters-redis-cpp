@@ -10,7 +10,7 @@ class ClientHandler {
 public:
     ClientHandler();
     void handleClient(int clientSocket);
-    static void setInitialConfig(const std::string& initialDir, const std::string& initialDbfilename);
+    static void setInitialConfig(const std::string& initialDir, const std::string& initialDbfilename, uint64_t& initialPort, bool& initialIsMaster, std::string& initialMasterHost, uint64_t& initialMasterPort, Role& initialRole);
     static void loadRdbFile();
 
 private:

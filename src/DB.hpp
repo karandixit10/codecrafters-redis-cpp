@@ -19,6 +19,11 @@ struct DB_Entry {
 
 typedef std::map<std::string, DB_Entry> database;
 
+enum class Role {
+    Master,
+    Slave
+};
+
 struct DB_Config {
   std::string dir;
   std::string db_filename;
@@ -26,4 +31,8 @@ struct DB_Config {
   int port;
   database db;
   database in_memory_db;
+  Role role;
+  bool isMaster;
+  std::string masterHost;
+  uint64_t masterPort;
 };

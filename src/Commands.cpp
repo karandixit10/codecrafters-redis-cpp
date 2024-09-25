@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <sys/socket.h>
+#include <iostream>
 
 CommandType Commands::getCommandType(const std::string& command) {
     if (command == "SET") return CommandType::SET;
@@ -103,10 +104,11 @@ void Commands::handleInfo(const std::vector<std::string>& command, int clientSoc
     std::string response;
 
     if (command.size() > 1 && command[1] == "replication") {
-        response = "role:master\r\n";
+        response = (config.role == Role::Master) ? "role:master\r\n" : "role:slave\r\n";
     } else {
         // Handle general INFO command or other sections if needed
-        response = "# Server\r\nredis_version:1.0.0\r\n# Replication\r\nrole:master\r\n";
+        response = "# Server\r\nredis_version:1.0.0\r\n# Replication\r\n";
+        response += config.role == Role::Master ? "role:master\r\n" : "role:slave\r\n";
     }
 
     // Encode the response as a Bulk string
