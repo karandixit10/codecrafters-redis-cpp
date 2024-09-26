@@ -104,11 +104,16 @@ void Commands::handleInfo(const std::vector<std::string>& command, int clientSoc
     std::string response;
 
     if (command.size() > 1 && command[1] == "replication") {
-        response = (config.role == Role::Master) ? "role:master\r\n" : "role:slave\r\n";
+        response = "# Replication\r\n";
+        response += (config.role == Role::Master) ? "role:master\r\n" : "role:slave\r\n";
+        response += "master_replid:" + config.master_replid + "\r\n";
+        response += "master_repl_offset:" + std::to_string(config.master_repl_offset) + "\r\n";
     } else {
         // Handle general INFO command or other sections if needed
         response = "# Server\r\nredis_version:1.0.0\r\n# Replication\r\n";
         response += config.role == Role::Master ? "role:master\r\n" : "role:slave\r\n";
+        response += "master_replid:" + config.master_replid + "\r\n";
+        response += "master_repl_offset:" + std::to_string(config.master_repl_offset) + "\r\n";
     }
 
     // Encode the response as a Bulk string

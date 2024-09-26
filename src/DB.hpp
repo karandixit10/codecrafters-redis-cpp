@@ -35,4 +35,6 @@ struct DB_Config {
   bool isMaster;
   std::string masterHost;
   uint64_t masterPort;
+  std::string master_replid;
+  uint64_t master_repl_offset;
 };

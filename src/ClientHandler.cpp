@@ -70,6 +70,8 @@ void ClientHandler::setInitialConfig(const std::string& initialDir, const std::s
     config.port = initialPort;
     config.isMaster = initialIsMaster;
     config.role = initialRole;
+    config.master_replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
+    config.master_repl_offset = 0;
 }
 
 void ClientHandler::loadRdbFile() {
