@@ -110,8 +110,51 @@ void TcpServer::handleReplicaConnection() {
 
     Logger::log("Sent PING command to master");
 
+    char buffer[1024];
+    ssize_t bytesRead = recv(master_fd, buffer, sizeof(buffer), 0);
+    if (bytesRead <= 0) {
+        Logger::error("Failed to receive PING response from master");
+        close(master_fd);
+        return;
+    }
+
+    // Send REPLCONF listening-port
+    std::string replconfPort = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$" + 
+                               std::to_string(std::to_string(port).length()) + "\r\n" + 
+                               std::to_string(port) + "\r\n";
+    if (send(master_fd, replconfPort.c_str(), replconfPort.size(), 0) < 0) {
+        Logger::error("Failed to send REPLCONF listening-port command to master");
+        close(master_fd);
+        return;
+    }
+    Logger::log("Sent REPLCONF listening-port command to master");
+
+    bytesRead = recv(master_fd, buffer, sizeof(buffer), 0);
+    if (bytesRead <= 0) {
+        Logger::error("Failed to receive REPLCONF listening-port response from master");
+        close(master_fd);
+        return;
+    }
+
+    // Send REPLCONF capa psync2
+    std::string replconfCapa = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
+    if (send(master_fd, replconfCapa.c_str(), replconfCapa.size(), 0) < 0) {
+        Logger::error("Failed to send REPLCONF capa psync2 command to master");
+        close(master_fd);
+        return;
+    }
+    Logger::log("Sent REPLCONF capa psync2 command to master");
+
+    bytesRead = recv(master_fd, buffer, sizeof(buffer), 0);
+    if (bytesRead <= 0) {
+        Logger::error("Failed to receive REPLCONF capa psync2 response from master");
+        close(master_fd);
+        return;
+    }
+
     // Keep the connection open
     // TODO: Implement replication logic here
+    
 }
 
 void TcpServer::start() {
