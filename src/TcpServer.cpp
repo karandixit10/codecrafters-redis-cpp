@@ -152,6 +152,24 @@ void TcpServer::handleReplicaConnection() {
         return;
     }
 
+    // Send PSYNC ? -1
+    std::string psyncCommand = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
+    if (send(master_fd, psyncCommand.c_str(), psyncCommand.size(), 0) < 0) {
+        Logger::error("Failed to send PSYNC command to master");
+        close(master_fd);
+        return;
+    }
+    Logger::log("Sent PSYNC command to master");
+
+    bytesRead = recv(master_fd, buffer, sizeof(buffer), 0);
+    if (bytesRead <= 0) {
+        Logger::error("Failed to receive PSYNC response from master");
+        close(master_fd);
+        return;
+    }
+
+    // TODO: Handle PSYNC response (FULLRESYNC)
+
     // Keep the connection open
     // TODO: Implement replication logic here
     
