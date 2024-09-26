@@ -144,9 +144,10 @@ void Commands::handleReplconf(const std::vector<std::string>& command, int clien
     sendResponse(clientSocket, "+OK\r\n");
 }
 
-void Commands::handlePsync(const std::vector<std::string>& command, int clientSocket) {
+void Commands::handlePsync(const std::vector<std::string>& command, int clientSocket, DB_Config& config) {
     Logger::log("PSYNC command: " + command[1] + " " + command[2]);
-    sendResponse(clientSocket, "+OK\r\n");
+    std::string response = "+FULLRESYNC " + config.master_replid + " " + std::to_string(config.master_repl_offset) + "\r\n";
+    sendResponse(clientSocket, response);
 }
 
 void Commands::sendResponse(int clientSocket, const std::string& response) {

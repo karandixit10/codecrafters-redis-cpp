@@ -29,7 +29,7 @@ public:
     static void handleKeys(const std::vector<std::string>& command, int clientSocket, DB_Config& config);
     static void handleInfo(const std::vector<std::string>& command, int clientSocket, DB_Config& config);
     static void handleReplconf(const std::vector<std::string>& command, int clientSocket);
-    static void handlePsync(const std::vector<std::string>& command, int clientSocket);
+    static void handlePsync(const std::vector<std::string>& command, int clientSocket, DB_Config& config);
 
 private:
     static void handleConfigGet(const std::string& parameter, int clientSocket, DB_Config& config);

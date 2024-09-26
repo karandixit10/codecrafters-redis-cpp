@@ -59,7 +59,7 @@ void ClientHandler::handleClient(int clientSocket) {
                 Commands::handleReplconf(command, clientSocket);
                 break;
             case CommandType::PSYNC:
-                Commands::handlePsync(command, clientSocket);
+                Commands::handlePsync(command, clientSocket, config);
                 break;
             default:
                 sendResponse(clientSocket, "-ERR unknown command\r\n");
