@@ -33,8 +33,7 @@ struct DB_Config {
   database in_memory_db;
   Role role;
   bool isMaster;
-  std::string masterHost;
-  uint64_t masterPort;
+  std::string masterHostAndPort;
   std::string master_replid;
   uint64_t master_repl_offset;
 };

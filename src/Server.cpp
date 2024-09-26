@@ -10,8 +10,7 @@ int main(int argc, char* argv[]) {
     bool isMaster = true;
     Role role = Role::Master;
     uint64_t port = 6379;  // default port
-    std::string masterHost;
-    uint64_t masterPort = 0;
+    std::string masterHostAndPort;
     // Parse command-line arguments
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -25,7 +24,7 @@ int main(int argc, char* argv[]) {
             port = std::stoull(argv[i + 1]);
             ++i;
         } else if (std::string(argv[i]) == "--replicaof" && i + 1 < argc) {
-            masterHost = argv[i + 1];
+            masterHostAndPort = argv[i + 1];
             isMaster = false;
             role = Role::Slave;
             i += 2;
@@ -33,16 +32,16 @@ int main(int argc, char* argv[]) {
     }
 
     // Set the initial configuration
-    ClientHandler::setInitialConfig(dir, dbfilename, port, isMaster, masterHost, masterPort, role);
+    ClientHandler::setInitialConfig(dir, dbfilename, port, isMaster, masterHostAndPort, role);
 
     // Initialize the logger
     //Logger::init("server.log");
 
     try {
-        TcpServer server(port);
+        TcpServer server(port, isMaster, masterHostAndPort);
         Logger::log("Server started on port " + std::to_string(port));
         if (!isMaster) {
-            Logger::log("Server running as slave, master: " + masterHost + ":" + std::to_string(masterPort));
+            Logger::log("Server running as slave, master: " + masterHostAndPort);
         }
         server.start();
     } catch (const std::exception& e) {

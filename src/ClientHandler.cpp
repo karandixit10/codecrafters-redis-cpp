@@ -63,13 +63,14 @@ void ClientHandler::handleClient(int clientSocket) {
     Logger::log("Client disconnected");
 }
 
-void ClientHandler::setInitialConfig(const std::string& initialDir, const std::string& initialDbfilename, uint64_t& initialPort, bool& initialIsMaster, std::string& initialMasterHost, uint64_t& initialMasterPort, Role& initialRole) {
+void ClientHandler::setInitialConfig(const std::string& initialDir, const std::string& initialDbfilename, uint64_t& initialPort, bool& initialIsMaster, std::string& initialMasterHostAndPort, Role& initialRole) {
     std::lock_guard<std::mutex> lock(configMutex);
     config.dir = initialDir;
     config.db_filename = initialDbfilename;
     config.port = initialPort;
     config.isMaster = initialIsMaster;
     config.role = initialRole;
+    config.masterHostAndPort = initialMasterHostAndPort;
     config.master_replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
     config.master_repl_offset = 0;
 }
