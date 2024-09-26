@@ -13,6 +13,8 @@ CommandType Commands::getCommandType(const std::string& command) {
     if (command == "CONFIG") return CommandType::CONFIG;
     if (command == "KEYS") return CommandType::KEYS;
     if (command == "INFO") return CommandType::INFO;
+    if (command == "REPLCONF") return CommandType::REPLCONF;
+    if (command == "PSYNC") return CommandType::PSYNC;
     return CommandType::UNKNOWN;
 }
 
@@ -135,6 +137,16 @@ void Commands::handleConfigGet(const std::string& parameter, int clientSocket, D
     std::string response = "*2\r\n$" + std::to_string(parameter.length()) + "\r\n" + parameter + "\r\n" +
                            "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
     sendResponse(clientSocket, response);
+}
+
+void Commands::handleReplconf(const std::vector<std::string>& command, int clientSocket) {
+    Logger::log("REPLCONF command: " + command[1] + " " + command[2]);
+    sendResponse(clientSocket, "+OK\r\n");
+}
+
+void Commands::handlePsync(const std::vector<std::string>& command, int clientSocket) {
+    Logger::log("PSYNC command: " + command[1] + " " + command[2]);
+    sendResponse(clientSocket, "+OK\r\n");
 }
 
 void Commands::sendResponse(int clientSocket, const std::string& response) {

@@ -55,6 +55,12 @@ void ClientHandler::handleClient(int clientSocket) {
             case CommandType::INFO:
                 Commands::handleInfo(command, clientSocket, config);
                 break;
+            case CommandType::REPLCONF:
+                Commands::handleReplconf(command, clientSocket);
+                break;
+            case CommandType::PSYNC:
+                Commands::handlePsync(command, clientSocket);
+                break;
             default:
                 sendResponse(clientSocket, "-ERR unknown command\r\n");
         }
