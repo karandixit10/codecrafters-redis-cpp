@@ -4,6 +4,8 @@
 #include <chrono>
 #include <sys/socket.h>
 #include <iostream>
+#include <string>
+#include "base64.h" 
 
 CommandType Commands::getCommandType(const std::string& command) {
     if (command == "SET") return CommandType::SET;
@@ -148,6 +150,24 @@ void Commands::handlePsync(const std::vector<std::string>& command, int clientSo
     Logger::log("PSYNC command: " + command[1] + " " + command[2]);
     std::string response = "+FULLRESYNC " + config.master_replid + " " + std::to_string(config.master_repl_offset) + "\r\n";
     sendResponse(clientSocket, response);
+
+    // Send the empty RDB file
+    sendRdbFile(clientSocket);
+}
+
+void Commands::sendRdbFile(int clientSocket) {
+    // Empty RDB file contents in base64
+    const std::string emptyRdbBase64 = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
+    
+    // Decode base64 to binary
+    std::string emptyRdbBinary = base64_decode(emptyRdbBase64);
+    
+    // Send the RDB file size
+    std::string sizePrefix = "$" + std::to_string(emptyRdbBinary.size()) + "\r\n";
+    sendResponse(clientSocket, sizePrefix);
+    
+    // Send the RDB file contents
+    sendResponse(clientSocket, emptyRdbBinary);
 }
 
 void Commands::sendResponse(int clientSocket, const std::string& response) {
