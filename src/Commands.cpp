@@ -7,6 +7,8 @@
 #include <string>
 #include "base64.h" 
 
+std::vector<int> Commands::replica_fds;
+
 CommandType Commands::getCommandType(const std::string& command) {
     if (command == "SET") return CommandType::SET;
     if (command == "GET") return CommandType::GET;
@@ -41,6 +43,12 @@ void Commands::handleSet(const std::vector<std::string>& command, int clientSock
 
     config.db[command[1]] = entry;
     sendResponse(clientSocket, "+OK\r\n");
+
+    // Propagate the command to replicas
+    std::string propagateCmd = "*3\r\n$3\r\nSET\r\n$" + std::to_string(command[1].length()) + "\r\n" + command[1] + "\r\n$" + std::to_string(command[2].length()) + "\r\n" + command[2] + "\r\n";
+    for (int replicaFd : replica_fds) {
+        sendResponse(replicaFd, propagateCmd);
+    }
 }
 
 void Commands::handleGet(const std::vector<std::string>& command, int clientSocket, DB_Config& config) {
@@ -150,6 +158,7 @@ void Commands::handlePsync(const std::vector<std::string>& command, int clientSo
     Logger::log("PSYNC command: " + command[1] + " " + command[2]);
     std::string response = "+FULLRESYNC " + config.master_replid + " " + std::to_string(config.master_repl_offset) + "\r\n";
     sendResponse(clientSocket, response);
+    replica_fds.push_back(clientSocket);
 
     // Send the empty RDB file
     sendRdbFile(clientSocket);

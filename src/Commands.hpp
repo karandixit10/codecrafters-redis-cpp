@@ -35,6 +35,7 @@ private:
     static void handleConfigGet(const std::string& parameter, int clientSocket, DB_Config& config);
     static void sendResponse(int clientSocket, const std::string& response);
     static void sendRdbFile(int clientSocket);
+    static std::vector<int> replica_fds;
 };
 
 #endif // COMMANDS_HPP
